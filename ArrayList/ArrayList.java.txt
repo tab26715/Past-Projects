@@ -1,0 +1,121 @@
+package cs1302.lists;
+// Implement this class according to the instructions
+/*
+ * @author Ty Burns ID# 811636973
+ */
+public class ArrayList<T extends Comparable<T>> implements List<T> {
+
+	@SuppressWarnings("unchecked")
+	private T[] array = (T[]) new Comparable[0];
+	
+
+	public void append(T elem) {
+		
+		// create a temporary array
+		@SuppressWarnings("unchecked")
+		T[] tmp = (T[]) new Comparable[array.length + 1];
+		
+		// copy elements from the original array into the temp array
+		for (int i = 0; i < array.length; i++) {
+			tmp[i] = array[i];
+		} // for
+		
+		// add the element to the last position in the temp array
+		tmp[tmp.length - 1] = elem;
+
+		// replace the array with the temp array
+		array = tmp;
+		
+	} // append
+
+	public void add(int idx, T elem) throws IndexOutOfBoundsException {
+		// create a temporary array
+		@SuppressWarnings("unchecked")
+		T[] tmp = (T[]) new Comparable[array.length];
+		
+		//copy elements from the original array into the temp array
+		//except for the value from idx which is replace with elem
+		for(int i =0; i < array.length; i++) {
+			if(idx == i)
+				tmp[i] = elem;
+			else
+				tmp[i] = array[i];
+		}
+		// replace the array with the temp array
+		array = tmp;
+	} // add
+
+	public T get(int idx) throws IndexOutOfBoundsException {
+		return array[idx];
+	} // get
+
+	public void prepend(T elem) {
+		
+		// create a temporary array
+		@SuppressWarnings("unchecked")
+		T[] tmp = (T[]) new Comparable[array.length + 1];
+		
+		// copy elements from the original array into the temp array
+		// shifts every value to be + 1
+		for (int i = 0; i < array.length; i++) {
+			tmp[i+1] = array[i];
+		} // for
+		
+		// add the element to the first position in the temp array
+		tmp[0] = elem;
+
+		// replace the array with the temp array
+		array = tmp;
+		
+	} // prepend
+
+	public void remove(int idx) throws IndexOutOfBoundsException {
+		
+		// create a temporary array
+		@SuppressWarnings("unchecked")
+		T[] tmp = (T[]) new Comparable[array.length-1];
+		//if idx == 0 a temp array is created that removes
+		//the first value and shifts all the values down
+		if(idx == 0){
+			for(int i = 0; i < array.length - 1; i++)
+				tmp[i] = array[i + 1];
+		}
+		//if idx == the length of the array a temp array
+		//is created and copies all values except for the last value
+		else if(idx == array.length){
+			for(int i = 0; i < array.length -1; i++)
+				tmp[i] = array[i];
+		}
+		//creates a copy of the array up to the idx value
+		//skips idx value and continues to add the rest of the values
+		else{
+			for(int i = 0; i < idx; i++)
+				tmp[i] = array[i];
+			for(int i = idx; i < array.length -1; i++)
+				tmp[i] = array[i + 1];
+		}
+
+		// replace the array with the temp array
+		array = tmp;
+	} // remove
+
+	public int search(T s, int lo, int hi) throws IndexOutOfBoundsException {
+		
+		int elementIndex = -1;
+		
+		//for loop checks to find s
+		// in between the values given (lo and hi)
+		// the index value where s is
+		for (int i = lo; i <= hi; i++){
+			if(array[i] == s)
+				return i;
+		}
+		//return index value of s
+		return elementIndex;
+	} // search
+
+	public int size() {
+		return array.length;
+	} // size
+	
+} // ArrayList
