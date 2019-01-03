@@ -1,0 +1,211 @@
+package cs1302.arcade;
+
+import java.util.Random;
+
+/**
+ * Class that represents all the methods 
+ * and logic required of a MineSweeper game
+ * does not actually implement the game anywhere
+ * or require a certain implementation of the 
+ * game.
+ *
+ * @author Josh Bielenberg
+ */
+public class MineSweeper{
+    
+    private char[][] board;
+    private boolean[][] mines;
+    private int[][] surroundingMines;
+    private int rows;
+    private int cols;
+    private int numMines;
+    private int moves;
+    private static int highScore;
+    private int flagsPlanted;
+    private int correctFlagsPlanted;
+
+    /**
+     * Constructor that creates a MineSweeper game
+     * with the specified rows, cols, and number of 
+     * mines.
+     *
+     * @param rows number of rows the board has
+     * @param cols number of cols the board has
+     * @param numMines number of mines the game has
+     */
+    public MineSweeper(int rows, int cols, int numMines){
+        this.rows = rows;
+        this.cols = cols;
+        this.numMines = numMines;
+        moves = 0;
+        board = new char[rows][cols];
+        mines = new boolean[rows][cols];
+        surroundingMines = new int[rows][cols];
+        for(int i = 0;i < rows;i++){
+            for(int j = 0;j < cols; j++){
+                mines[i][j] = false;
+                board[i][j] = ' ';
+            }//for
+        }//for
+        populateMines();
+        calculateSurroundingMines();
+    }//MineSweeper
+
+    /**
+     * Private method that populate the mines array
+     * with mines at random locations.
+     */
+    private void populateMines(){
+        Random r = new Random();
+        int mineCount = 0;
+        while(mineCount < numMines){
+            int row = r.nextInt(rows);
+            int col = r.nextInt(cols);
+            if(mines[row][col] == false){
+                mines[row][col] = true;
+                mineCount++;
+            }//if
+        }//while
+    }//populateMines
+
+    /**
+     * Private method that fills the array
+     * that contains the data on how many mines
+     * surround each cell
+     */
+    private void calculateSurroundingMines(){
+        int counter;
+        for(int i = 0;i < rows;i++){
+            for(int j = 0;j < cols;j++){
+                if(mines[i][j]){
+                    surroundingMines[i][j] = -1;
+                    continue;
+                }//if
+                counter = 0;
+                for(int x = -1;x <= 1;x++){
+                    for(int y = -1;y <= 1;y++){
+                        if(spotOnBoard(i+x,j+y) && mines[i+x][j+y])
+                            counter++;
+                    }//for
+                }//for
+                surroundingMines[i][j] = counter;
+            }//for
+        }//for
+    }//calculateSurroundingMines
+
+    /**
+     * Method the implementation of the game will
+     * use to reveal the specified square. It will return true
+     * if a mine was in the spot, otherwise it will
+     * engage the recursive revealAdjacent method to show
+     * how many mines are nearby and then return false.
+     * 
+     * @return boolean value whether or not a mine was hit
+     */
+    public int revealSquare(int row, int col){
+        if(mines[row][col] == true){
+            board[row][col] = 'X';
+            return -1;
+        }//if
+        else if(surroundingMines[row][col] == 0){
+            return 0;
+        }
+        else{
+            moves++;
+            board[row][col] = Integer.toString(surroundingMines[row][col]).charAt(0);
+            return surroundingMines[row][col];
+        }//else
+    }//revealSquare
+
+    /**
+     * Method used for the player to plant a flag
+     * at the specified location.
+     *
+     * @param row specified row of square
+     * @param col specified col of square
+     */
+    public void plantFlag(int row, int col){
+        if(board[row][col] != 'F'){
+            board[row][col] = 'F';
+            flagsPlanted++;
+            if(mines[row][col])
+                correctFlagsPlanted++;
+        }//if
+        else{
+            board[row][col] = ' ';
+            flagsPlanted--;
+            if(mines[row][col])
+                correctFlagsPlanted--;
+        }//else
+    }//plantFlag
+
+   /** 
+    * Method that checks to see whether the player
+    * has won the game. If the player has flags on 
+    * each mine and no other flags then the player 
+    * has won.
+    *
+    * @return if the player has won or not
+    */
+   public boolean checkWinningCondition(){
+        if(correctFlagsPlanted == numMines)
+            return true;
+        else 
+            return false;
+   }//checkWinningCondition
+
+   /**
+    * Getter method for the score
+    *
+    * @return the score
+    */
+   public int getScore(){
+        return rows*cols-moves;
+   }//getScore
+
+   /**Getter method for the high score
+    *
+    * @return the high score
+    */
+   public int getHighScore(){
+        return highScore;
+   }//getHighScore
+
+   /**
+    * Setter method for the high score
+    * Only sets the high score if the parameter is higher 
+    * than the current high score.
+    * 
+    * @param score the potential new high score
+    */
+   public void setHighScore(int score){
+        if(score > highScore)
+            highScore = score;
+   }//setHighScore
+
+    /**
+     * Checks to see if specified row and column 
+     * combination are a spot on the board
+     *
+     * @param row row specified
+     * @param col column specified
+     * @return if the space is in the board
+     */
+    public boolean spotOnBoard(int row, int col){
+        if(row < rows && col < cols && row >= 0 && col >= 0)
+            return true;
+        else
+            return false;
+    }//spotOnBoard
+
+    public char getBoardPiece(int row, int col){
+        return board[row][col];
+        //return Character.toString(board[row][col]);
+    }//getBoardPiece
+
+    public void updateMoves(){
+        moves++;
+    }
+
+}//MineSweeper
+

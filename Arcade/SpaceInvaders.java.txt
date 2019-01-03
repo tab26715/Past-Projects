@@ -1,0 +1,258 @@
+package cs1302.arcade;
+
+import javafx.scene.layout.Pane;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.Image;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.Group;
+import javafx.geometry.Orientation;
+import javafx.scene.text.Text;
+import javafx.animation.Timeline;
+import javafx.animation.KeyFrame;
+import javafx.util.Duration;
+import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Shape;
+import javafx.scene.input.KeyCode;
+import javafx.animation.TranslateTransition;
+import javafx.scene.paint.Color;
+import java.util.Random;
+import javafx.event.EventHandler;
+import javafx.event.ActionEvent;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.geometry.Bounds;
+import javafx.geometry.BoundingBox;
+import javafx.scene.shape.Path;
+
+
+/**
+ * Class represents a Space Invaders game by populating
+ * the board with objects and animation
+ *
+ * @authors Ty Burns tab26715@uga.edu 
+ */
+
+public class SpaceInvaders extends Pane{
+    
+    public Rectangle[][] monsters;
+    private Cover[] cover;
+    private Timeline timeline;
+    private Timeline timeline2;
+    private int s=0;
+    private Ship ship;
+    private SpaceInvadersDisplay display;
+    private boolean monsterHit[][];
+    private TranslateTransition bulletAnimation;
+    private Shape bullet;
+    private int numHit;
+    /**
+     *Constructor for a Space Invaders game
+     *
+     *@param SpaceInvadersDisplay display passes the pane made in the display class to 
+     * this one
+     */
+    public SpaceInvaders(SpaceInvadersDisplay display){
+    	super();
+        this.display = display;
+        ship = new Ship(3, this);
+        bullet = new Rectangle(5,20,Color.RED);
+        initBulletAnimationListener();
+        getChildren().add(ship);
+		monsters = new Rectangle[5][11];
+        monsterHit = new boolean[5][11];
+        cover = new Cover[5];
+		for(int i = 0;i < monsters[0].length;i++){
+			monsters[0][i] = new Rectangle(40,40,new ImagePattern(new Image("monster3.jpg")));
+			monsters[1][i] = new Rectangle(40,40,new ImagePattern(new Image("monster2.png")));
+			monsters[2][i] = new Rectangle(40,40,new ImagePattern(new Image("monster2.png")));
+			monsters[3][i] = new Rectangle(40,40,new ImagePattern(new Image("monster1.png")));
+			monsters[4][i] = new Rectangle(40,40,new ImagePattern(new Image("monster1.png")));
+		}//for
+
+		for(int i = 0;i < monsters[0].length;i++)
+			for(int j = 0;j < monsters.length;j++){
+				monsters[j][i].setY(j*50);
+				monsters[j][i].setX(i*60);
+				getChildren().add(monsters[j][i]);
+                monsterHit[j][i] = false;
+			}
+
+        for(int i = 0; i < cover.length;i++){
+            cover[i] = new Cover();
+            cover[i].setX(i*200 + 50);
+            cover[i].setY(500);
+            getChildren().add(cover[i]);
+        }
+        numHit = 0;
+		initTimeline();
+        initAlienShots();
+
+    }//spaceInvaders
+    
+    /**
+     * Private method used to start the animation for the monsters to 
+     * sweep across the board down towards the player
+     */
+    private void initTimeline(){
+        timeline = new Timeline();
+        KeyFrame keyframe = new KeyFrame(Duration.seconds(1),e -> {
+            if(monsters[0][10].getX() >= 950)
+                for(int i = 0;i < monsters.length;i++)
+                    for(int j = 0;j < monsters[0].length;j++){
+                        monsters[i][j].setX(monsters[i][j].getX() - 20);
+                        monsters[i][j].setY(monsters[i][j].getY() + 50);
+                    }
+            else if(monsters[0][0].getX() <= 0 && monsters[0][0].getY()!=0)
+                for(int i = 0;i < monsters.length;i++)
+                    for(int j = 0;j < monsters[0].length;j++){
+                        monsters[i][j].setX(monsters[i][j].getX() + 20);          
+                        monsters[i][j].setY(monsters[i][j].getY() + 50);
+                    }
+            else if(monsters[0][0].getY() % 100 == 0)
+                for(int i = 0;i < monsters.length;i++)
+                    for(int j = 0;j < monsters[0].length;j++)
+                        monsters[i][j].setX(monsters[i][j].getX() + 20);
+            else 
+                for(int i = 0;i < monsters.length;i++)
+                    for(int j = 0;j < monsters[0].length;j++)
+                        monsters[i][j].setX(monsters[i][j].getX() - 20);
+            if(monsters[0][0].getY() >= 700)
+                display.setCenter(new Text("You lost!\n Your score was: " + display.getScore()));
+        });
+    	
+        timeline.setCycleCount(Timeline.INDEFINITE);
+        timeline.getKeyFrames().add(keyframe);
+        timeline.play();
+	
+    }//initTimeline
+    
+    /**
+     * Getter method for a reference for the ship. 
+     * Used to let the ship request control.
+     *
+     *@return the ship object
+     */
+    public Ship getShip(){
+        return ship;
+    }
+
+    /**
+     * Returns the rectangle object that represent the monster
+     * at the specified index
+     *
+     *@param int row the row index, int col the column index
+     *@return the rectangle object at that index
+     */
+    public Rectangle getMonster(int row, int col){
+        return monsters[row][col];
+    }
+
+    /**
+     * Says whether or not the monster at the specified index
+     * has been hit or not
+     *
+     *@param int row the row index, int col the column index
+     *@return the boolean value there
+     */
+    public boolean getMonsterHit(int row, int col){
+        return monsterHit[row][col];
+    }
+
+    public void setMonsterHit(int row, int col){
+        monsterHit[row][col] = true;
+        numHit++;
+    }
+
+    public Cover getCover(int numCover){
+        return cover[numCover];
+    }
+
+    /**
+     * Getter for how many monsters have been hit
+     */
+    public int getNumHit(){
+        return numHit;
+    }
+
+    /**
+     * Getter method for display
+     */
+    public SpaceInvadersDisplay getDisplay(){
+        return display;
+    }
+
+    private void initAlienShots(){
+        KeyFrame kf = new KeyFrame(Duration.seconds(2.1), e ->{
+            if(getChildren().contains(bullet))
+                return;
+            else{
+
+                getChildren().add(bullet);
+                Random r = new Random();
+                boolean isSet=false;
+                Rectangle monster = null;
+                int monsterRow;
+                int monsterCol;
+                while(!isSet){
+                    monsterRow = r.nextInt(5);
+                    monsterCol = r.nextInt(11);
+                    monster = monsters[monsterRow][monsterCol];
+                    if(!getMonsterHit(monsterRow,monsterCol)){
+                        isSet = true;
+                    }
+                }//while
+                bulletAnimation.setFromX(monster.getX()+25);
+                bulletAnimation.setFromY(0);
+                bulletAnimation.setToX(monster.getX()+25);
+                bulletAnimation.setToY(720);
+                bulletAnimation.play();
+            }
+        });   
+        timeline2 = new Timeline();
+        timeline2.setCycleCount(Timeline.INDEFINITE);
+        timeline2.getKeyFrames().add(kf);
+        timeline2.play();
+
+    }
+
+    private void initBulletAnimationListener(){
+
+        bulletAnimation = new TranslateTransition(Duration.seconds(2), bullet);
+        
+        bullet.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
+            @Override
+            public void changed(ObservableValue<? extends Bounds> observable,
+                    Bounds oldValue, Bounds newValue) {
+                        if (((Path)Shape.intersect(bullet,(Shape)ship)).getElements().size() > 0) {
+                            getChildren().remove(bullet);
+                            ship.takeHit();
+                            display.updateLives();
+                            bulletAnimation.stop();
+                            
+                        }
+                for(int i = 0;i < 5;i++){
+                    if(((Path)Shape.intersect(bullet,(Shape)getCover(i))).getElements().size() > 0 && !getCover(i).isGone()){
+                        getCover(i).takeHit();
+                        bulletAnimation.stop();
+                        getChildren().remove(bullet);
+
+                    }
+                }
+            }
+        });
+        bulletAnimation.setOnFinished(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                getChildren().remove(bullet);
+            }
+        });
+    }//startAlienShots
+
+    /**
+     *updates the score counter 
+     */
+    public void updateScore(int bonus){
+	this.s=s+bonus;
+	display.score.setText(""+s);
+    }//updateScore
+ }//SpaceInvaders

@@ -1,0 +1,238 @@
+package cs1302.arcade;
+
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.control.Button;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.TilePane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.animation.AnimationTimer;
+import javafx.geometry.Pos;
+import javafx.scene.control.Separator;
+import javafx.geometry.Orientation;
+
+/**
+ * Class that represents the board for MineSweeper
+ * that is presented when the user chooses to play 
+ * MineSweeper. Uses the minesweeper implementation
+ * in MineSweeper.java in this package
+ *
+ * @author Josh Bielenberg
+ */
+public class MineSweeperBoard extends BorderPane{
+    
+    private MineButton[][] mineButtons;
+    private TilePane board;
+    private HBox scoreBoard;
+    private Button mineMode;
+    private Button flagMode;
+    private Button checkWon;
+    private Button playAgain;
+    private MineSweeper game;
+    private boolean isMineSweeping;
+    private VBox scoreBox;
+    private VBox highScoreBox;
+    private Text time;
+    private Text bestTime;
+    private AnimationTimer scoreTimer;
+    private static long easyBestTime;
+    private static long normalBestTime;
+    private static long impossibleBestTime;
+    private char difficulty;
+    private int rows;
+    private int cols;
+    private int numMines;
+    /**
+     * Constructor that creates a GUI minesweeper
+     * that uses the minesweeper class for the logic.
+     *
+     * @param rows the number of rows for the board
+     * @param cols the number of columns for the board
+     * @param numMines the number of mines on the boared
+     */
+    public MineSweeperBoard(char difficulty){
+        //Create objects
+        super();
+        this.difficulty = difficulty;
+
+        //Create objects for scoreboard
+        scoreBoard = new HBox();
+        mineMode = new Button("Sweep for\n Mines!");
+        flagMode = new Button("Plant Flags!\n ");
+        checkWon = new Button("Check for\nwin!");
+        time = new Text();
+        bestTime = new Text();
+        scoreBox = new VBox(new Text("Time"), time);
+        highScoreBox = new VBox(new Text("Best Time"), bestTime);
+
+        switch (difficulty){
+            case 'e':
+                rows = 8;
+                cols = 8;
+                numMines = 8;
+                bestTime.setText(Long.toString(easyBestTime));
+                break;
+            case 'n':
+                rows = 10;
+                cols = 10;
+                numMines = 15;
+                bestTime.setText(Long.toString(normalBestTime));
+                break;
+            case 'i':
+                rows = 12;
+                cols = 12;
+                numMines = 28;
+                bestTime.setText(Long.toString(impossibleBestTime));
+                break;
+        }//switch
+
+        createBoard();
+
+        //Set and add objects to scoreboard
+        mineMode.setOnAction(e -> isMineSweeping = true);
+        flagMode.setOnAction(e -> isMineSweeping = false);
+        checkWon.setOnAction(e -> {
+            if(game.checkWinningCondition()){
+                scoreTimer.stop();
+                VBox toDisplay = new VBox(new Text("You Won!\nYour time was: " + time.getText()),playAgain);
+                setCenter(toDisplay);
+                toDisplay.setAlignment(Pos.CENTER);
+            }
+            if(difficulty == 'e' && Integer.parseInt(time.getText()) < easyBestTime){
+                easyBestTime = Integer.parseInt(time.getText());
+                bestTime.setText(Long.toString(easyBestTime));
+            }
+            else if(difficulty == 'n' && Integer.parseInt(time.getText()) < normalBestTime){
+                normalBestTime = Integer.parseInt(time.getText());
+                bestTime.setText(Long.toString(normalBestTime));
+            }
+            else if(difficulty == 'i' && Integer.parseInt(time.getText()) < impossibleBestTime){
+                impossibleBestTime = Integer.parseInt(time.getText());
+                bestTime.setText(Long.toString(impossibleBestTime));
+            }
+            
+        });
+        scoreBoard.getChildren().addAll(mineMode,flagMode,checkWon,scoreBox,new Separator(Orientation.VERTICAL),highScoreBox);
+        setTop(scoreBoard);
+ 
+        playAgain = new Button("Want to play again?");
+        playAgain.setOnAction(e -> createBoard());
+        scoreBox.setPrefWidth(highScoreBox.getWidth());
+    }//MineSweeperBoard
+
+    /**
+     * Private method used to realign the GUI's board with the logic class' board.
+     */
+    private void updateBoard(){
+        for(int i = 0;i < mineButtons.length;i++)
+            for(int j = 0;j < mineButtons[0].length;j++){
+                mineButtons[i][j].setText(Character.toString(game.getBoardPiece(i,j)));
+                if(game.getBoardPiece(i,j) != ' ' && game.getBoardPiece(i,j) != 'F')
+                    mineButtons[i][j].setSelected(true);
+            }//for
+    }//updateBoard
+
+    /**
+     * Method that creates a new board
+     */
+    private void createBoard(){
+        board = new TilePane();
+        board.setMaxWidth(30*cols);
+        board.setPrefTileWidth(30.0);
+        board.setPrefTileHeight(30.0);
+        board.setPrefColumns(cols);
+        game = new MineSweeper(rows,cols,numMines);
+        mineButtons = new MineButton[rows][cols];
+        for(int i = 0; i < rows;i++)
+            for(int j = 0;j < cols;j++){
+                mineButtons[i][j] = new MineButton(i,j);
+                board.getChildren().add(mineButtons[i][j]);
+        }//for
+        isMineSweeping = true;
+        updateBoard();
+        setCenter(board);
+        initTimeline();
+    }//createBoard
+
+    /**
+     * Starts timer counter
+     */
+    private void initTimeline(){
+        long startTime = System.currentTimeMillis();
+        scoreTimer = new AnimationTimer(){
+            @Override
+            public void handle(long now){
+                time.setText(Long.toString((System.currentTimeMillis()-startTime)/1000));
+            }
+        };
+        scoreTimer.start();
+
+    }//initTimeline
+
+    /**
+     * Clas that extends Toggle button to represent one mine spot
+     *
+     * @author Josh Bielenberg
+     */
+    class MineButton extends ToggleButton{
+        
+        private int row;
+        private int col;
+        
+        /**
+         * Constructor that creates a mine button in a specified location.
+         * Also gives this mine button it's event handler, which is why we needed
+         * to make an inner class for this
+         *
+         * @param row the row for the mine spot
+         * @param col the col for the mine spot
+         */
+        MineButton(int row, int col){
+            super(" ");
+            this.row = row;
+            this.col = col;
+            setPrefWidth(30.0);
+            setPrefHeight(30.0);
+            setOnAction(e -> {
+                if(isMineSweeping){
+                    int revealedSquare = game.revealSquare(row,col);
+                    if(revealedSquare == -1){
+                        time.setText(Integer.toString(0));
+                        scoreTimer.stop();
+                        VBox toDisplay = new VBox(new Text("You Lost :("), playAgain);
+                        setCenter(toDisplay);
+                        toDisplay.setAlignment(Pos.CENTER);
+                    }//if
+                    else if(revealedSquare == 0){
+                        if(game.spotOnBoard(row+1,col) && !mineButtons[row+1][col].isSelected())//row+1,col
+                            mineButtons[row+1][col].fire();
+                        if(game.spotOnBoard(row-1,col) && !mineButtons[row-1][col].isSelected())//row-1,col
+                            mineButtons[row-1][col].fire();                    
+                        if(game.spotOnBoard(row,col+1) && !mineButtons[row][col+1].isSelected())//row,col+1
+                            mineButtons[row][col+1].fire(); 
+                        if(game.spotOnBoard(row,col-1) && !mineButtons[row][col-1].isSelected())//row,col-1
+                            mineButtons[row][col-1].fire();
+                        if(game.spotOnBoard(row+1,col+1) && !mineButtons[row+1][col+1].isSelected())//row+1,col+1
+                            mineButtons[row+1][col+1].fire();
+                        if(game.spotOnBoard(row-1,col-1) && !mineButtons[row-1][col-1].isSelected())//row-1,col-1
+                            mineButtons[row-1][col-1].fire();
+                        if(game.spotOnBoard(row+1,col-1) && !mineButtons[row+1][col-1].isSelected())//row+1,col-1
+                            mineButtons[row+1][col-1].fire();
+                        if(game.spotOnBoard(row-1,col+1) && !mineButtons[row-1][col+1].isSelected())//row-1,col+1
+                            mineButtons[row-1][col+1].fire();
+                    }//elif
+                }//if
+                else{
+                    setSelected(false);
+                    game.plantFlag(row,col);
+                }//else
+                updateBoard();
+                //time.setText(Integer.toString(game.getScore()));
+           });
+        }//MineButton
+    }//MineButton
+
+}//MineSweeperBoard

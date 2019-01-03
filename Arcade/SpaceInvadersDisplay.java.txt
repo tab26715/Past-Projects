@@ -1,0 +1,96 @@
+package cs1302.arcade;
+
+
+import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.scene.Group;
+import javafx.scene.paint.Color;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.Image;
+import javafx.scene.control.Button;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Text;
+import javafx.geometry.Pos;
+import javafx.geometry.Insets;
+/**
+ * This class implements the GUI aspect of the space Invaders
+ * game.
+ *
+ * @authors Ty Burns tab26715@uga.edu Josh Belienburg
+ */
+public class SpaceInvadersDisplay extends BorderPane{
+
+    private BorderPane container;
+    private SpaceInvaders game;
+    private HBox top;
+    private Text t;
+    private Text t1;
+    private Text t2;
+    public Text score;
+    
+    /**
+     * Constructor for a gui space invaders game
+     * that extends borderpane. 
+     */
+    public SpaceInvadersDisplay(){
+		super();
+		setStyle("-fx-background-color: black");
+		top = new HBox(15);
+		t = new Text("SPACE INVADERS");
+		t1 = new Text("LIVES LEFT: ");
+		t2 = new Text("SCORE: ");
+		score = new Text("0");
+		t.setFill(Color.WHITE);
+		t1.setFill(Color.WHITE);
+		t2.setFill(Color.WHITE);
+		score.setFill(Color.WHITE);
+		//t2.setAlignment(Pos.BASELINE_RIGHT);
+		//score.setAlignment(Pos.BASELINE_RIGHT);
+		top.setPadding(new Insets(20));
+		top.getChildren().add(t);
+		top.getChildren().add(t1);
+		top.getChildren().add(t2);
+		top.getChildren().add(score);
+		game = new SpaceInvaders(this);
+		for(int i=0; i<game.getShip().getLives(); i++){ //i<ship.getLives()
+		    ImageView life = new ImageView("ship.jpg");
+		    life.setFitWidth(30);
+		    life.setFitHeight(30);
+		    top.getChildren().add(life);
+		}//for
+		setTop(top);
+		setCenter(game);
+	
+    }//SpaceInvadersDisplay
+    
+    /**
+     * Getter method for a reference to the ship. 
+     * Used to let the ship request control
+     *
+     *@return Ship object used in game
+     */
+    public Ship getShip(){
+    	return game.getShip();
+    }
+
+    public void updateLives(){
+    	top.getChildren().remove(top.getChildren().size()-1);
+    	if(game.getShip().getLives() <= 0){
+    		setCenter(new Text("Game Over!\nYour score was: " + score));
+    	}
+    }
+    
+    /**
+     * Adds updated score to the display pane
+     */
+    public void addScore(){
+	score.setText(""+score);
+    }//addScore
+    
+    public String getScore(){
+	return "" +  score;
+    }//getScore
+}//SpaceInvadersDisplay

@@ -1,0 +1,49 @@
+package cs1302.arcade;
+
+import javafx.scene.shape.Rectangle;
+import javafx.scene.paint.Color;
+
+/**
+ * Class that represents the cover in Space Invaders
+ *
+ * @author Josh Bielenberg
+ */
+public class Cover extends Rectangle{
+
+	private int health;
+    
+    /**
+     * Constructor the creates a piece of cover with
+     * a width of 100, height of 40, and default color green.
+     */
+	public Cover(){
+		super(100, 40,Color.GREEN);
+		health = 5;
+	}
+
+    /**
+     * Decriments the health of a cover object
+     */
+	public void takeHit(){
+		health--;
+		if(health == 3){
+			setFill(Color.YELLOW);
+		}
+		if(health == 1){
+			setFill(Color.RED);
+		}
+		if(health == 0){
+			setFill(Color.BLACK);
+		}
+	}
+    /**
+     * Returns a boolean that tells
+     * whether or not a cover object has been destroyed
+     */
+	public boolean isGone(){
+		if(health <= 0)
+			return true;
+		else
+			return false;
+	}
+}

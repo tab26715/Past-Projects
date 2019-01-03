@@ -1,0 +1,181 @@
+package cs1302.arcade;
+
+import javafx.scene.text.Text;
+import javafx.event.EventHandler;
+import javafx.event.ActionEvent;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.Image;
+import javafx.scene.shape.Rectangle;
+import javafx.geometry.Bounds;
+import javafx.geometry.BoundingBox;
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.input.KeyCode;
+import javafx.scene.shape.Path;
+import javafx.scene.shape.Shape;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.ImagePattern;
+import javafx.scene.paint.Color;
+import javafx.animation.Timeline;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.TranslateTransition;
+import javafx.util.Duration;
+
+/**
+ * Represents a player's ship, containing methods and logic
+ * that allow for its movement, shooting, and destruction
+ *
+ *@author Ty Burns tab26715@uga.edu Josh Bielenberg
+ */
+public class Ship extends Rectangle{
+
+    private int lives;
+    private boolean shotCooledDown;
+    private ImageView image;
+    private Shape bullet;
+    private SpaceInvaders board;
+    private KeyValue kv;
+    private Timeline timeLine;
+
+        /**
+         * Class constructor that creates a ship with
+         * a parameterized number of lives
+         *
+         * @param lives the number of lives the ship has remaining
+         */
+    public Ship(int lives, SpaceInvaders board){
+            super(50,50);
+            setFill(new ImagePattern(new Image("ship.jpg")));
+            setY(600);
+            shotCooledDown = true;
+	        this.board = board;
+	        this.lives = lives;
+            setOnKeyPressed(e ->{
+                if(e.getCode() == KeyCode.LEFT && getX() > 10){
+                    setX(getX() - 10);
+                }
+                if(e.getCode() == KeyCode.RIGHT && getX() < 990){
+                    setX(getX() + 10);
+                }
+                if(e.getCode() == KeyCode.SPACE && shotCooledDown){
+                    shoot();
+                }
+
+                
+            });
+        }//Ship
+    
+    /**
+     * creates a bullet of type rectangle with dimension and fill
+     * but no placement, calls the initTimeLine() method to
+     * begin animation and hit detection
+     */
+        private void shoot(){
+    	    bullet = new Rectangle(5,20);
+    	    //bullet.setX(this.getX()+25);
+    	    // bullet.setY(this.getY());
+    	    //bullet.setWidth(5);
+    	    //bullet.setHeight(20);
+    	    bullet.setFill(Color.GREEN);
+    	    board.getChildren().add(bullet);
+            shotCooledDown = false;
+    	    initTimeLine();
+
+        }//shoot
+            
+        private void die(){
+            this.lives = lives-1;
+            if(lives==0){
+                //gameOver();
+            }//if
+            return;
+        }//die
+
+        /**
+         * lowers life by 1
+         */
+
+        public void takeHit(){
+            lives--;
+        }//takeHit
+
+        /**
+         * Returns the lives remaining of the current ship
+         */
+        public int getLives(){
+            return this.lives;
+        }//getLives
+            
+        /**
+         * Sets the number of lives remaining
+         * 
+         * @param lives number of lives remaining
+         */
+        public void setLives(int lives){
+            if(lives<0){
+                System.out.println("Invalid number of lives");
+                return;
+            }//if
+                this.lives = lives;
+                return;
+        }//setLives
+    /**
+     * Implements the bullet animation by creating a translateTransition object
+     * and provides logic for hit detection.
+     */
+    private void initTimeLine(){
+
+	    TranslateTransition bulletAnimation = new TranslateTransition(Duration.seconds(2), bullet);
+	    bulletAnimation.setFromX(this.getX()+25);
+	    bulletAnimation.setFromY(this.getY());
+	    bulletAnimation.setToX(this.getX()+25);
+	    bulletAnimation.setToY(-720);
+	    
+	    
+	    bullet.boundsInParentProperty().addListener(new ChangeListener<Bounds>() {
+            @Override
+            public void changed(ObservableValue<? extends Bounds> observable, Bounds oldValue, Bounds newValue) {
+                for (int i=0; i<5; i++ ){
+		            for (int j=0; j<11; j++){
+				if (((Path)Shape.intersect(bullet,(Shape)board.getMonster(i,j))).getElements().size() > 0 && !board.getMonsterHit(i,j)){//Casts Shape.intersect(shape,shape)
+		                    board.getChildren().remove(board.getMonster(i,j));                                                                 //as a path and check to see if it 
+				    board.setMonsterHit(i,j);                                                                                         //contains any elements
+				    shotCooledDown = true;
+                            bulletAnimation.stop();
+                            board.getChildren().remove(bullet);
+			    board.updateScore(200);
+				}
+		            }
+		        }
+                for(int i = 0;i < 5;i++){
+                    if(((Path)Shape.intersect(bullet,(Shape)board.getCover(i))).getElements().size() > 0 && !board.getCover(i).isGone()){ //Collision detection for cover
+                        board.getCover(i).takeHit();                                                                                      
+                        shotCooledDown = true;                                                                                           
+                        bulletAnimation.stop();
+                        board.getChildren().remove(bullet);
+
+                    }
+                }
+                if(board.getNumHit() == 55){
+                    board.getDisplay().setCenter(new Text("You saved the world!!1\n Your score was: " + board.getDisplay().getScore()));
+                }
+	        }
+	    });
+	    bulletAnimation.setOnFinished(new EventHandler<ActionEvent>() { //Removes the bullet from the board after its animation is over
+            @Override
+            public void handle(ActionEvent event) {
+                board.getChildren().remove(bullet);
+                shotCooledDown = true;
+            }
+        });
+	    bulletAnimation.play();
+
+    }//initTimeLine
+
+    
+}//ship
+
+
